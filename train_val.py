@@ -62,8 +62,10 @@ def main():
     num_classes = 200 if dataset == 'cub' else 1000
     base_size = 512 if dataset == 'cub' else 256
     pool_size = 14 if base_size == 512 else 7
-    workers = 0 if debug else 8
-    batch_size = 2 if debug else 256
+    #workers = 0 if debug else 8
+    workers = 0 if debug else 4
+    #batch_size = 2 if debug else 256
+    batch_size = 2 if debug else 64 # for titan cluster
     if base_size == 512 and \
         args.arch == '152':
         batch_size = 128
@@ -71,7 +73,8 @@ def main():
     lr_drop_epoch_list = [31, 61, 81]
     epochs = 100
     eval_freq = 1
-    gpu_ids = [0] if debug else [0,1,2,3,4,5,6,7]
+    gpu_ids = [0] if debug else [0,1,2,3]
+    #gpu_ids = [0]
     crop_size = 224 if base_size == 256 else 448
 
     # args for the nl and cgnl block
