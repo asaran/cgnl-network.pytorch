@@ -44,6 +44,8 @@ parser.add_argument('--dataset', default='cub', type=str,
         help='cub | imagenet (default: cub)')
 parser.add_argument('--lr', '--learning-rate', default=0.01, type=float, metavar='LR',
         help='initial learning rate (default: 0.01)')
+parser.add_argument('--gaze', '-g', dest='gaze', action='store_true', 
+        help='use gaze coordinates')
 
 best_prec1 = 0
 best_prec5 = 0
@@ -55,13 +57,26 @@ def main():
     args = parser.parse_args()
 
     # simple args
+    use_gaze = args.gaze
     debug = args.debug
     if debug: cprint('=> WARN: Debug Mode', 'yellow')
 
     dataset = args.dataset
-    num_classes = 200 if dataset == 'cub' else 1000
-    base_size = 512 if dataset == 'cub' else 256
-    pool_size = 14 if base_size == 512 else 7
+    if dataset=='cub':
+        num_classes = 200
+        base_size = 512
+        pool_size = 14
+    elif dataset == 'imagenet':
+        num_classes = 1000
+        base_size = 256
+        pool_size = 7
+    elif dataset == 'ut-lfd':
+        num_classes = 6
+        base_size = 512
+        pool_size = 14
+    # num_classes = 200 if dataset == 'cub' else 1000
+    # base_size = 512 if dataset == 'cub' else 256
+    # pool_size = 14 if base_size == 512 else 7
     #workers = 0 if debug else 8
     workers = 0 if debug else 4
     #batch_size = 2 if debug else 256
@@ -97,6 +112,11 @@ def main():
         imgs_fold = os.path.join(data_root)
         train_ann_file = os.path.join(data_root, 'imagenet_train.list')
         valid_ann_file = os.path.join(data_root, 'imagenet_val.list')
+    elif dataset == 'ut-lfd':
+        data_root = 'data/ut-lfd/pouring'
+        imgs_fold = os.path.join(data_root, 'VD_images')
+        train_ann_file = os.path.join(data_root, 'train.list')
+        valid_ann_file = os.path.join(data_root, 'val.list')
     else:
         raise NameError("WARN: The dataset '{}' is not supported yet.")
 
@@ -147,7 +167,11 @@ def main():
                              pool_size=pool_size)
 
     # change the fc layer
-    model._modules['fc'] = torch.nn.Linear(in_features=2048,
+    if use_gaze:
+        model._modules['fc'] = torch.nn.Linear(in_features=2048+2,
+                                           out_features=num_classes)
+    else:
+        model._modules['fc'] = torch.nn.Linear(in_features=2048,
                                            out_features=num_classes)
     torch.nn.init.kaiming_normal_(model._modules['fc'].weight,
                                   mode='fan_out', nonlinearity='relu')
@@ -196,7 +220,7 @@ def main():
         current_lr = adjust_learning_rate(optimizer, drop_ratio, epoch, lr_drop_epoch_list,
                                           WARMUP_EPOCHS, WARMUP_LRS)
         # train one epoch
-        train(train_loader, model, criterion, optimizer, epoch, epochs, current_lr)
+        train(train_loader, model, criterion, optimizer, epoch, epochs, current_lr, use_gaze)
 
         if nl_nums > 0:
             checkpoint_name = '{}-r-{}-w-{}{}-block.pth.tar'.format(dataset, arch, nl_nums, nl_type)
@@ -217,7 +241,7 @@ def main():
             }, is_best, filename=checkpoint_name)
 
 
-def train(train_loader, model, criterion, optimizer, epoch, epochs, current_lr):
+def train(train_loader, model, criterion, optimizer, epoch, epochs, current_lr, use_gaze):
     batch_time = AverageMeter()
     data_time = AverageMeter()
     losses = AverageMeter()
@@ -228,14 +252,16 @@ def train(train_loader, model, criterion, optimizer, epoch, epochs, current_lr):
     model.train()
 
     end = time.time()
-    for i, (input, target) in enumerate(train_loader):
+    for i, (input, target, gaze_coords) in enumerate(train_loader):
         # measure data loading time
         data_time.update(time.time() - end)
 
         target = target.cuda(non_blocking=True)
 
         # compute output
-        output = model(input)
+        # print(gaze_coords)
+        # gaze_coords = torch.FloatTensor(gaze_coords)
+        output = model(input, gaze_coords, use_gaze)
         loss = criterion(output, target)
 
         # measure accuracy and record loss
@@ -281,7 +307,7 @@ def validate(val_loader, model, criterion):
             target = target.cuda(non_blocking=True)
 
             # compute output
-            output = model(input)
+            output = model(input, gaze_coords)
             loss = criterion(output, target)
 
             # measure accuracy and record loss

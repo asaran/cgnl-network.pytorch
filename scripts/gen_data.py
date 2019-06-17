@@ -20,20 +20,20 @@ class LfdData():
 		self.vid_end = {}
 		# self.reach, self.grasp, self.trans, self.pour, self.ret, self.vid_rel = {}, {}, {}, {}, {}, {}
 		self.seg_times, self.segs = {}, {}
-		self.labels = { 'reach': 1,
-						'grasp': 2,
-						'transport': 3,
-						'pour': 4,
-						'release': 5,
-						'return': 6}
+		self.labels = { 'reach': 0,
+						'grasp': 1,
+						'transport': 2,
+						'pour': 3,
+						'return': 4,
+						'release': 5}
 		self.order = {'KT1':'kv','KT2':'kv','KT3':'vk','KT4':'vk','KT5':'kv','KT6':'kv','KT7':'vk','KT8':'vk','KT9':'kv','KT10':'kv',\
 		'KT11':'vk','KT12':'vk','KT13':'kv','KT14':'kv','KT15':'vk','KT16':'vk','KT17':'kv','KT18':'vk','KT19':'vk','KT20':'vk'}
 
 		f = open(self.data_dir +"images.txt",'w')
 		f2 = open(self.data_dir +"image_class_labels.txt","w")
 		f3 = open(self.data_dir +"image_gaze.txt","w")
-		f4 = open(self.data_dir +"train.txt","w")
-		f5 = open(self.data_dir +"val.txt","w")
+		f4 = open(self.data_dir +"train.list","w")
+		f5 = open(self.data_dir +"val.list","w")
 		f.close()
 		f2.close()
 		f3.close()
@@ -132,8 +132,8 @@ class LfdData():
 		f = open(self.data_dir +"images.txt",'a')
 		f2 = open(self.data_dir +"image_class_labels.txt","a")
 		f3 = open(self.data_dir +"image_gaze.txt","a")
-		f4 = open(self.data_dir + "train.txt", 'a')
-		f5 = open(self.data_dir + "val.txt", 'a')
+		f4 = open(self.data_dir + "train.list", 'a')
+		f5 = open(self.data_dir + "val.list", 'a')
 
 		while success:	
 			# print(count)
@@ -183,9 +183,9 @@ class LfdData():
 					f3.write(str(self.img_count)+' '+str(gaze[0])+' '+str(gaze[1])+'\n')
 
 					if(user=='KT19' or user=='KT20'):
-						f5.write(img_name+' '+str(self.labels[seg])+'\n')
+						f5.write(img_name+' '+str(self.labels[seg])+' '+str(gaze[0])+' '+str(gaze[1])+'\n')
 					else:
-						f4.write(img_name+' '+str(self.labels[seg])+'\n')
+						f4.write(img_name+' '+str(self.labels[seg])+' '+str(gaze[0])+' '+str(gaze[1])+'\n')
 
 			count += 1
 			success, img = vidcap.read()
