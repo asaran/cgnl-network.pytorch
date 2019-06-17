@@ -303,7 +303,7 @@ def validate(val_loader, model, criterion, use_gaze):
 
     with torch.no_grad():
         end = time.time()
-        for i, (input, target, gaze) in enumerate(val_loader):
+        for i, (input, target, gaze_coords) in enumerate(val_loader):
             target = target.cuda(non_blocking=True)
 
             # compute output
