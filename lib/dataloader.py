@@ -8,6 +8,7 @@
 """
 
 import os
+import torch
 import torch.utils.data as data
 from PIL import Image, ImageFile
 
@@ -26,9 +27,12 @@ class ImgLoader(data.Dataset):
         ls = self.imgs[index].strip().split()
         img_path = ls[0]
         target = int(ls[1])
+        gaze_x = float(ls[2])
+        gaze_y = float(ls[3])
+        gaze = torch.FloatTensor([gaze_x, gaze_y])
         img = Image.open(
                 os.path.join(self.root, img_path)).convert('RGB')
-        return self.transform(img), target
+        return self.transform(img), target, gaze
 
     def __len__(self):
         return len(self.imgs)
