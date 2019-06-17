@@ -228,7 +228,7 @@ def main():
             checkpoint_name = '{}-r-{}-base.pth.tar'.format(dataset, arch)
 
         if (epoch + 1) % eval_freq == 0:
-            prec1, prec5 = validate(val_loader, model, criterion)
+            prec1, prec5 = validate(val_loader, model, criterion, use_gaze)
             is_best = prec1 > best_prec1
             best_prec1 = max(prec1, best_prec1)
             best_prec5 = max(prec5, best_prec5)
@@ -292,7 +292,7 @@ def train(train_loader, model, criterion, optimizer, epoch, epochs, current_lr, 
                    data_time=data_time, loss=losses, top1=top1, top5=top5))
 
 
-def validate(val_loader, model, criterion):
+def validate(val_loader, model, criterion, use_gaze):
     batch_time = AverageMeter()
     losses = AverageMeter()
     top1 = AverageMeter()
@@ -303,11 +303,11 @@ def validate(val_loader, model, criterion):
 
     with torch.no_grad():
         end = time.time()
-        for i, (input, target) in enumerate(val_loader):
+        for i, (input, target, gaze) in enumerate(val_loader):
             target = target.cuda(non_blocking=True)
 
             # compute output
-            output = model(input, gaze_coords)
+            output = model(input, gaze_coords, use_gaze)
             loss = criterion(output, target)
 
             # measure accuracy and record loss
