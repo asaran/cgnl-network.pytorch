@@ -5,6 +5,7 @@ import ast
 from bisect import bisect_left
 import os
 import gzip
+import math
 
 class LfdData():
 	def __init__(self, exp):
@@ -32,13 +33,17 @@ class LfdData():
 		f = open(self.data_dir +"images.txt",'w')
 		f2 = open(self.data_dir +"image_class_labels.txt","w")
 		f3 = open(self.data_dir +"image_gaze.txt","w")
-		f4 = open(self.data_dir +"train.list","w")
-		f5 = open(self.data_dir +"val.list","w")
+		
 		f.close()
 		f2.close()
 		f3.close()
-		f4.close()
-		f5.close()
+
+		ft, fv = [], []
+		for i in range(10):
+			ft = open(self.data_dir +"train"+str(i)+".list","w")
+			fv = open(self.data_dir +"val"+str(i)+".list","w")
+			ft.close()
+			fv.close()
 		self.img_count = 0
 
 	def read_json(self, my_dir):
@@ -132,8 +137,13 @@ class LfdData():
 		f = open(self.data_dir +"images.txt",'a')
 		f2 = open(self.data_dir +"image_class_labels.txt","a")
 		f3 = open(self.data_dir +"image_gaze.txt","a")
-		f4 = open(self.data_dir + "train.list", 'a')
-		f5 = open(self.data_dir + "val.list", 'a')
+		ft, fv = [], []
+		for i in range(10):
+			f4 = open(self.data_dir +"train"+str(i)+".list","a")
+			f5 = open(self.data_dir +"val"+str(i)+".list","a")
+
+			ft.append(f4)
+			fv.append(f5)
 
 		while success:	
 			# print(count)
@@ -182,10 +192,20 @@ class LfdData():
 					# TODO: write normalized gaze coordinates
 					f3.write(str(self.img_count)+' '+str(gaze[0])+' '+str(gaze[1])+'\n')
 
-					if(user=='KT19' or user=='KT20'):
-						f5.write(img_name+' '+str(self.labels[seg])+' '+str(gaze[0])+' '+str(gaze[1])+'\n')
-					else:
-						f4.write(img_name+' '+str(self.labels[seg])+' '+str(gaze[0])+' '+str(gaze[1])+'\n')
+					# if(user=='KT19' or user=='KT20'):
+					# 	f5.write(img_name+' '+str(self.labels[seg])+' '+str(gaze[0])+' '+str(gaze[1])+'\n')
+					# else:
+					# 	f4.write(img_name+' '+str(self.labels[seg])+' '+str(gaze[0])+' '+str(gaze[1])+'\n')
+					
+					fold_no = int(math.ceil(float(user[2:])/2))
+					print('user: '+user+'\tfold_no: '+str(fold_no))
+					fv[fold_no-1].write(img_name+' '+str(self.labels[seg])+' '+str(gaze[0])+' '+str(gaze[1])+'\n')
+
+					# this user's data goes to all other training folds
+					for i in range(10):
+						if i==fold_no-1:
+							continue
+						ft[i].write(img_name+' '+str(self.labels[seg])+' '+str(gaze[0])+' '+str(gaze[1])+'\n')
 
 			count += 1
 			success, img = vidcap.read()
