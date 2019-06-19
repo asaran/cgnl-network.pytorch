@@ -46,6 +46,10 @@ parser.add_argument('--lr', '--learning-rate', default=0.01, type=float, metavar
         help='initial learning rate (default: 0.01)')
 parser.add_argument('--gaze', '-g', dest='gaze', action='store_true', 
         help='use gaze coordinates')
+parser.add_argument('--train', default='train.list', type=str,
+        help='list of training images, labels and gaze coordinates')
+parser.add_argument('--val', default='val.list', type=str,
+        help='list of validation images, labels and gaze coordinates')
 
 best_prec1 = 0
 best_prec5 = 0
@@ -80,7 +84,7 @@ def main():
     #workers = 0 if debug else 8
     workers = 0 if debug else 4
     #batch_size = 2 if debug else 256
-    batch_size = 2 if debug else 64 # for titan cluster
+    batch_size = 2 if debug else 64 # 64 for 4 GPUs on titan cluster
     if base_size == 512 and \
         args.arch == '152':
         batch_size = 128
@@ -115,8 +119,8 @@ def main():
     elif dataset == 'ut-lfd':
         data_root = 'data/ut-lfd/pouring'
         imgs_fold = os.path.join(data_root, 'VD_images')
-        train_ann_file = os.path.join(data_root, 'train.list')
-        valid_ann_file = os.path.join(data_root, 'val.list')
+        train_ann_file = os.path.join(data_root, args.train)
+        valid_ann_file = os.path.join(data_root, args.val)
     else:
         raise NameError("WARN: The dataset '{}' is not supported yet.")
 
