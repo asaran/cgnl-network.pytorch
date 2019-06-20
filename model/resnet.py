@@ -469,7 +469,7 @@ class ResNet(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def forward(self, x, gaze_coords, use_gaze):
+    def forward(self, x, gaze_coords, use_gaze, get_feats=False):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -478,7 +478,11 @@ class ResNet(nn.Module):
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
+        print('shape layer3: ', x.size())
         x = self.layer4(x)
+        print('shape layer4: ', x.size())
+        if get_feats:
+            return x
 
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
@@ -491,27 +495,6 @@ class ResNet(nn.Module):
             x = self.fc(x)
         else:
             x = self.fc(x)
-
-        return x
-
-    def get_features(self, x):
-        x = self.conv1(x)
-        x = self.bn1(x)
-        x = self.relu(x)
-        x = self.maxpool(x)
-
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
-        print('shape x: ', x.size())
-        x = self.layer4(x)
-
-        # x = self.avgpool(x)
-        # x = x.view(x.size(0), -1)
-        # x = self.dropout(x)
-        print('shape x: ', x.size())
-        # print('shape gaze: ', gaze_coords.size()) #torch.Size([batch_size, 2050])
-        # x = self.fc(x)
 
         return x
 

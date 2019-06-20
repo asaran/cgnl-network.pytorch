@@ -371,7 +371,7 @@ def save_features(val_loader, model, criterion):
             target = target.cuda(non_blocking=True)
 
             # compute output
-            feats = model.get_features(input)
+            feats = model(input, gaze_coords, use_gaze, get_feats=True)
             # loss = criterion(output, target)
 
             # measure accuracy and record loss
