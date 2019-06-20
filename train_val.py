@@ -355,7 +355,7 @@ def validate(val_loader, model, criterion, use_gaze):
     return top1.avg, top5.avg
 
 
-def save_features(val_loader, model, criterion, use_gaze):
+def save_features(val_loader, model, criterion):
     # batch_time = AverageMeter()
     # losses = AverageMeter()
     # top1 = AverageMeter()
