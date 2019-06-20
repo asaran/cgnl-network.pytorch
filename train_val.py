@@ -18,6 +18,7 @@ from torchvision import transforms
 from termcolor import cprint
 from lib import dataloader
 from model import resnet
+import pickle as pkl
 
 # torch version
 cprint('=> Torch Vresion: ' + torch.__version__, 'green')
@@ -38,6 +39,8 @@ parser.add_argument('--arch', default='50', type=str,
         help='the depth of resnet (default: 50)')
 parser.add_argument('--valid', '-v', dest='valid',
         action='store_true', help='just run validation')
+parser.add_argument('--save_feats', '-s', dest='save_feats',
+        action='store_true', help='just save features for validation images with a forward pass')
 parser.add_argument('--checkpoints', default='', type=str,
         help='the dir of checkpoints')
 parser.add_argument('--dataset', default='cub', type=str,
@@ -205,6 +208,19 @@ def main():
         cprint('=> WARN: warmup is used in the first {} epochs'.format(
             WARMUP_EPOCHS), 'yellow')
 
+    # save features
+    if args.save_feats:
+        cprint('=> Feature Saving MODE', 'yellow')
+        print('forward pass ...')
+        checkpoint_fold = args.checkpoints
+        checkpoint_best = os.path.join(checkpoint_fold, 'model_best.pth.tar')
+        print('=> loading state_dict from {}'.format(checkpoint_best))
+        model.load_state_dict(
+                torch.load(checkpoint_best)['state_dict'])
+        save_features(val_loader, model, criterion)
+        # print(' * Final Accuracy: Prec@1 {:.3f}, Prec@5 {:.3f}'.format(prec1, prec5))
+        exit(0)
+
     # valid
     if args.valid:
         cprint('=> WARN: Validation Mode', 'yellow')
@@ -256,7 +272,7 @@ def train(train_loader, model, criterion, optimizer, epoch, epochs, current_lr, 
     model.train()
 
     end = time.time()
-    for i, (input, target, gaze_coords) in enumerate(train_loader):
+    for i, (input, target, gaze_coords,_) in enumerate(train_loader):
         # measure data loading time
         data_time.update(time.time() - end)
 
@@ -307,7 +323,7 @@ def validate(val_loader, model, criterion, use_gaze):
 
     with torch.no_grad():
         end = time.time()
-        for i, (input, target, gaze_coords) in enumerate(val_loader):
+        for i, (input, target, gaze_coords,_) in enumerate(val_loader):
             target = target.cuda(non_blocking=True)
 
             # compute output
@@ -337,6 +353,55 @@ def validate(val_loader, model, criterion, use_gaze):
               .format(top1=top1, top5=top5))
 
     return top1.avg, top5.avg
+
+
+def save_features(val_loader, model, criterion, use_gaze):
+    # batch_time = AverageMeter()
+    # losses = AverageMeter()
+    # top1 = AverageMeter()
+    # top5 = AverageMeter()
+    feat_dict = {}
+
+    # switch to evaluate mode
+    model.eval()
+
+    with torch.no_grad():
+        end = time.time()
+        for i, (input, target, gaze_coords, img_paths) in enumerate(val_loader):
+            target = target.cuda(non_blocking=True)
+
+            # compute output
+            feats = model.get_features(input)
+            # loss = criterion(output, target)
+
+            # measure accuracy and record loss
+            # prec1, prec5 = accuracy(output, target, topk=(1, 5))
+            # losses.update(loss.item(), input.size(0))
+            # top1.update(prec1[0], input.size(0))
+            # top5.update(prec5[0], input.size(0))
+
+            # measure elapsed time
+            batch_time.update(time.time() - end)
+            end = time.time()
+
+            if i % args.print_freq == 0:
+                print('Test: [{0}/{1}]\t'
+                      'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                      'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                      'Prec@1 {top1.val:.3f} ({top1.avg:.3f})\t'
+                      'Prec@5 {top5.val:.3f} ({top5.avg:.3f})'.format(
+                       i, len(val_loader), batch_time=batch_time, loss=losses,
+                       top1=top1, top5=top5))
+
+            for img_path, feat in zip(img_paths,feats):
+                feat_dict[img_path] = feat
+        # print(' * Prec@1 {top1.avg:.3f} Prec@5 {top5.avg:.3f}'
+        #       .format(top1=top1, top5=top5))
+
+    with open('features.pkl', 'wb') as handle:
+        pickle.dump(feat_dict, handle)
+
+
 
 
 def adjust_learning_rate(optimizer, drop_ratio, epoch, lr_drop_epoch_list,

@@ -32,7 +32,8 @@ class ImgLoader(data.Dataset):
         gaze = torch.FloatTensor([gaze_x, gaze_y])
         img = Image.open(
                 os.path.join(self.root, img_path)).convert('RGB')
-        return self.transform(img), target, gaze
+
+        return self.transform(img), target, gaze, img_path
 
     def __len__(self):
         return len(self.imgs)

@@ -494,6 +494,27 @@ class ResNet(nn.Module):
 
         return x
 
+    def get_features(self, x):
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
+
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        print('shape x: ', x.size())
+        x = self.layer4(x)
+
+        # x = self.avgpool(x)
+        # x = x.view(x.size(0), -1)
+        # x = self.dropout(x)
+        print('shape x: ', x.size())
+        # print('shape gaze: ', gaze_coords.size()) #torch.Size([batch_size, 2050])
+        # x = self.fc(x)
+
+        return x
+
 
 def load_partial_weight(model, pretrained, nl_nums, nl_layer_id):
     """Loads the partial weights for NL/CGNL network.
