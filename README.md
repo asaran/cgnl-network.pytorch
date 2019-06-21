@@ -134,19 +134,19 @@ The code is developed and tested under 8 Tesla P40 / V100-SXM2-16GB GPUS cards o
 ### Perform Validating
 
 ```bash
-$ python train_val.py --arch '50' --dataset 'cub' --nl-type 'cgnl' --nl-num 1 --checkpoints ${FOLDER_DIR} --valid
+$ python train_val.py --arch '50' --dataset 'ut-lfd' --nl-type 'cgnl' --nl-num 1 --checkpoints ${FOLDER_DIR} --valid
 ```
 
 ### Perform Training Baselines
 
 ```bash
-$ python train_val.py --arch '50' --dataset 'cub' --nl-num 0
+$ python train_val.py --arch '50' --dataset 'ut-lfd' --nl-num 0
 ```
 
 ### Perform Training NL and CGNL Networks
 
 ```bash
-$ python train_val.py --arch '50' --dataset 'cub' --nl-type 'cgnl' --nl-num 1 --warmup
+$ python train_val.py --arch '50' --dataset 'ut-lfd' --nl-type 'cgnl' --nl-num 1 --warmup
 ```
 
 ## Reference
