@@ -217,7 +217,7 @@ def main():
         print('=> loading state_dict from {}'.format(checkpoint_best))
         model.load_state_dict(
                 torch.load(checkpoint_best)['state_dict'])
-        save_features(val_loader, model, criterion)
+        save_features(val_loader, model, criterion, use_gaze)
         # print(' * Final Accuracy: Prec@1 {:.3f}, Prec@5 {:.3f}'.format(prec1, prec5))
         exit(0)
 
@@ -355,8 +355,8 @@ def validate(val_loader, model, criterion, use_gaze):
     return top1.avg, top5.avg
 
 
-def save_features(val_loader, model, criterion):
-    # batch_time = AverageMeter()
+def save_features(val_loader, model, criterion, use_gaze):
+    batch_time = AverageMeter()
     # losses = AverageMeter()
     # top1 = AverageMeter()
     # top5 = AverageMeter()
@@ -387,11 +387,12 @@ def save_features(val_loader, model, criterion):
             if i % args.print_freq == 0:
                 print('Test: [{0}/{1}]\t'
                       'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                      'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-                      'Prec@1 {top1.val:.3f} ({top1.avg:.3f})\t'
-                      'Prec@5 {top5.val:.3f} ({top5.avg:.3f})'.format(
-                       i, len(val_loader), batch_time=batch_time, loss=losses,
-                       top1=top1, top5=top5))
+                      #'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                      #'Prec@1 {top1.val:.3f} ({top1.avg:.3f})\t'
+                      #'Prec@5 {top5.val:.3f} ({top5.avg:.3f})'
+		      .format(i, len(val_loader), batch_time=batch_time))
+		       #, loss=losses,
+                       #top1=top1, top5=top5))
 
             for img_path, feat, label in zip(img_paths,feats,target):
                 feat_dict[img_path] = [feat,label]
@@ -399,7 +400,7 @@ def save_features(val_loader, model, criterion):
         #       .format(top1=top1, top5=top5))
 
     with open('features.pkl', 'wb') as handle:
-        pickle.dump(feat_dict, handle)
+        pkl.dump(feat_dict, handle)
 
 
 
