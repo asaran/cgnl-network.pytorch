@@ -394,8 +394,10 @@ def save_features(val_loader, model, criterion, use_gaze):
 		       #, loss=losses,
                        #top1=top1, top5=top5))
 
+
             for img_path, feat, label in zip(img_paths,feats,target):
                 feat_dict[img_path] = [feat,label]
+
         # print(' * Prec@1 {top1.avg:.3f} Prec@5 {top5.avg:.3f}'
         #       .format(top1=top1, top5=top5))
 
