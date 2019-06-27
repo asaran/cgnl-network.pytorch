@@ -406,11 +406,12 @@ def save_features(val_loader, model, criterion, use_gaze):
                     feat_dict[video_id] = {}
                     feat_dict[video_id][img_id] = [feat,label]
                 else:
+                    assert(img_id not in feat_dict[video_id])
                     feat_dict[video_id][img_id] = [feat,label]
 
         # print(' * Prec@1 {top1.avg:.3f} Prec@5 {top5.avg:.3f}'
         #       .format(top1=top1, top5=top5))
-
+    print(len(feat_dict.keys()), len(feat_dict[feat_dict.keys()[0]].keys()))
     with open('features.pkl', 'wb') as handle:
         pkl.dump(feat_dict, handle)
 
