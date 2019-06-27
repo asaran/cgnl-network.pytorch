@@ -478,16 +478,17 @@ class ResNet(nn.Module):
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
-        print('shape layer3: ', x.size())
+        print('shape layer3: ', x.size()) # [16, 2048, 28, 28]
         x = self.layer4(x)
-        print('shape layer4: ', x.size())
+        print('shape layer4: ', x.size()) # [16, 2048, 14, 14]
         if get_feats:
             return x
 
         x = self.avgpool(x)
+        # print('shape x: ', x.size())  # [16, 2048, 1, 1]
         x = x.view(x.size(0), -1)
         x = self.dropout(x)
-        # print('shape x: ', x.size())
+        
         # print('shape gaze: ', gaze_coords.size()) #torch.Size([batch_size, 2050])
         if use_gaze:
             x = torch.cat((x, gaze_coords), 1)

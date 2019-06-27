@@ -395,6 +395,7 @@ def save_features(val_loader, model, criterion, use_gaze):
                        #top1=top1, top5=top5))
 
             # TODO: order the images of every video. Index the feat_dict with video_id --> list of ordered
+            # iterate over batch
             for img_path, feat, label in zip(img_paths,feats,target):
                 import re
                 idx = [m.start() for m in re.finditer(r"_",img_path)][1]
@@ -403,9 +404,9 @@ def save_features(val_loader, model, criterion, use_gaze):
                 img_id = int(img_path[idx:].strip('_').strip('.jpg'))
                 if video_id not in feat_dict:
                     feat_dict[video_id] = {}
-                    feat_dict[video_id][img_id] = [img_path,feat,label]
+                    feat_dict[video_id][img_id] = [feat,label]
                 else:
-                    feat_dict[video_id][img_id] = [img_path,feat,label]
+                    feat_dict[video_id][img_id] = [feat,label]
 
         # print(' * Prec@1 {top1.avg:.3f} Prec@5 {top5.avg:.3f}'
         #       .format(top1=top1, top5=top5))
