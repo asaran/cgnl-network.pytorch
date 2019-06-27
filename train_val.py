@@ -398,8 +398,9 @@ def save_features(val_loader, model, criterion, use_gaze):
             for img_path, feat, label in zip(img_paths,feats,target):
                 import re
                 idx = [m.start() for m in re.finditer(r"_",img_path)][1]
-                video_id = img_path[:,idx]
-                img_id = int(a[idx:].strip('_').strip('.jpg'))
+                #print(idx,type(idx))
+                video_id = img_path[:idx]
+                img_id = int(img_path[idx:].strip('_').strip('.jpg'))
                 if video_id not in feat_dict:
                     feat_dict[video_id] = {}
                     feat_dict[video_id][img_id] = [img_path,feat,label]
