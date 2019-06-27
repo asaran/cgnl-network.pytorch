@@ -1,1 +1,8 @@
 data/*
+*pth.tar
+pretrained/*
+scripts/*.txt
+trained_models/*
+lib/__pycache__/*
+model/__pycache__/*
+*.pkl
