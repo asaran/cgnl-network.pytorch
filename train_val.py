@@ -411,7 +411,12 @@ def save_features(val_loader, model, criterion, use_gaze):
 
         # print(' * Prec@1 {top1.avg:.3f} Prec@5 {top5.avg:.3f}'
         #       .format(top1=top1, top5=top5))
-    print(len(feat_dict.keys()), len(feat_dict[feat_dict.keys()[0]].keys()))
+    print(len(feat_dict.keys()), len(feat_dict[feat_dict.keys()[1]].keys()))
+    # simple_feat_dict = {}
+    # for v in feat_dict:
+    #     l = len(feat_dict[v].keys())
+    #     for idx in feat_dict[v]:
+
     with open('features.pkl', 'wb') as handle:
         pkl.dump(feat_dict, handle)
 

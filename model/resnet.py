@@ -481,11 +481,12 @@ class ResNet(nn.Module):
         print('shape layer3: ', x.size()) # [16, 2048, 28, 28]
         x = self.layer4(x)
         print('shape layer4: ', x.size()) # [16, 2048, 14, 14]
-        if get_feats:
-            return x
+        
 
         x = self.avgpool(x)
         # print('shape x: ', x.size())  # [16, 2048, 1, 1]
+        if get_feats:
+            return x
         x = x.view(x.size(0), -1)
         x = self.dropout(x)
         
