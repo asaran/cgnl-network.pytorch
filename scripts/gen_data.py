@@ -9,7 +9,7 @@ import math
 import rosbag
 
 class LfdData():
-    def __init__(self, exp):
+    def __init__(self, exp, demo_type, short_video=False):
         self.data_dir = '../data/ut-lfd/'+ exp + '/' #'../data/pouring/experts/KT6/5fyyvco/segments/6/'
         self.visualize = False
         self.users = []
@@ -20,6 +20,7 @@ class LfdData():
         self.model = []
         self.vid_start = {}
         self.vid_end = {}
+        self.short_video = short_video
         # self.reach, self.grasp, self.trans, self.pour, self.ret, self.vid_rel = {}, {}, {}, {}, {}, {}
         self.seg_times, self.segs = {}, {}
         self.labels = { 'Reaching': 0,
@@ -31,36 +32,56 @@ class LfdData():
         self.order = {'KT1':'kv','KT2':'kv','KT3':'vk','KT4':'vk','KT5':'kv','KT6':'kv','KT7':'vk','KT8':'vk','KT9':'kv','KT10':'kv',\
         'KT11':'vk','KT12':'vk','KT13':'kv','KT14':'kv','KT15':'vk','KT16':'vk','KT17':'kv','KT18':'vk','KT19':'vk','KT20':'vk'}
 
-        f = open(self.data_dir +"images.txt",'w')
-        f2 = open(self.data_dir +"image_class_labels.txt","w")
-        f3 = open(self.data_dir +"image_gaze.txt","w")
-        
-        f.close()
-        f2.close()
-        f3.close()
-
-        f = open(self.data_dir +"KT/images.txt",'w')
-        f2 = open(self.data_dir +"KT/image_class_labels.txt","w")
-        f3 = open(self.data_dir +"KT/image_gaze.txt","w")
-
-        f.close()
-        f2.close()
-        f3.close()
-
-        ft, fv = [], []
-        for i in range(10):
-            ft = open(self.data_dir +"train"+str(i)+".list","w")
-            fv = open(self.data_dir +"val"+str(i)+".list","w")
-            ft.close()
-            fv.close()
         self.img_count = 0
 
-        ft, fv = [], []
-        for i in range(10):
-            ft = open(self.data_dir +"KT/train"+str(i)+".list","w")
-            fv = open(self.data_dir +"KT/val"+str(i)+".list","w")
-            ft.close()
-            fv.close()
+        if demo_type == 'v':
+            f = open(self.data_dir +"images.txt",'w')
+            f2 = open(self.data_dir +"image_class_labels.txt","w")
+            f3 = open(self.data_dir +"image_gaze.txt","w")
+            
+            f.close()
+            f2.close()
+            f3.close()
+
+            ft, fv = [], []
+            for i in range(10):
+                ft = open(self.data_dir +"train"+str(i)+".list","w")
+                fv = open(self.data_dir +"val"+str(i)+".list","w")
+                ft.close()
+                fv.close()
+
+        if demo_type=='k' and not self.short_video:
+            f = open(self.data_dir +"KT/images.txt",'w')
+            f2 = open(self.data_dir +"KT/image_class_labels.txt","w")
+            f3 = open(self.data_dir +"KT/image_gaze.txt","w")
+
+            f.close()
+            f2.close()
+            f3.close()
+
+            ft, fv = [], []
+            for i in range(10):
+                ft = open(self.data_dir +"KT/train"+str(i)+".list","w")
+                fv = open(self.data_dir +"KT/val"+str(i)+".list","w")
+                ft.close()
+                fv.close()
+
+        if demo_type=='k' and self.short_video:
+            f = open(self.data_dir +"KT_50/images.txt",'w')
+            f2 = open(self.data_dir +"KT_50/image_class_labels.txt","w")
+            f3 = open(self.data_dir +"KT_50/image_gaze.txt","w")
+
+            f.close()
+            f2.close()
+            f3.close()
+
+            ft, fv = [], []
+            for i in range(10):
+                ft = open(self.data_dir +"KT_50/train"+str(i)+".list","w")
+                fv = open(self.data_dir +"KT_50/val"+str(i)+".list","w")
+                ft.close()
+                fv.close()
+
 
     def read_json(self, my_dir):
         data_file = my_dir+"livedata.json.gz"
@@ -308,9 +329,9 @@ class LfdData():
 
 
     def create_kt_imgs(self):
-        # self.read_kt_annotation_file()
-        # print(self.users)
+
         self.users = self.order.keys()
+        # self.users = ['KT1', 'KT2']
         for user in self.users:
             print(user)
             exps = self.order[user]
@@ -327,14 +348,18 @@ class LfdData():
             # print(seg)
             # trial = 4
             for trial in trials:
-                self.gaze_for_kt_imgs(seg, user, trial, 20)
+                if not self.short_video:
+                    self.gaze_for_kt_imgs(seg, user, trial, 5)
+                else:
+                    self.gaze_for_kt_imgs_short(seg, user, trial)
 
 
     def gaze_for_kt_imgs(self, seg, user, trial, skip):
         user_dir = self.data_dir + 'videos/' + user + '/' + seg + '/segments/' + str(trial) + '/'
         if not os.path.exists(user_dir):
             return
-        bag_dir = '/home/akanksha/Documents/gaze_for_lfd_study_data/gaze_lfd_user_study/'
+        bag_dir = '/home/akanksha/Documents/gaze_for_lfd_study_data/gaze_lfd_user_study/' 
+
         self.read_json(user_dir)
         vidcap = cv2.VideoCapture(user_dir+'fullstream.mp4')
         fps = vidcap.get(cv2.CAP_PROP_FPS)
@@ -362,7 +387,6 @@ class LfdData():
 
         bagloc = bag_dir + user + '/bags/'
         bagfiles = os.listdir(bagloc)
-
 
         bag_file = ''
         
@@ -479,7 +503,6 @@ class LfdData():
                 # kf_type = next_recorded_kf
                 kf_type = 'Transport'
 
-            # TODO
             if(count%skip==0):
                 # 'Other' keyframe is ignored
                 if kf_type=='Other':   
@@ -491,6 +514,206 @@ class LfdData():
                 self.img_count+=1
                 img_name = user+'_'+str(trial)+'_'+str(count)+'.jpg'
                 cv2.imwrite(self.data_dir+'/KD_images/'+img_name, img)
+                f.write(str(self.img_count)+' '+img_name+'\n')
+                # seg = self.find_segment(user, count, fps, end_time)
+                seg = kf_type
+                f2.write(str(self.img_count)+' '+str(self.labels[seg])+'\n')
+                # TODO: write normalized gaze coordinates
+                f3.write(str(self.img_count)+' '+str(gaze[0])+' '+str(gaze[1])+'\n')
+                
+                fold_no = int(math.ceil(float(user[2:])/2))
+                print('user: '+user+'\tfold_no: '+str(fold_no)+'\tcount: '+str(count))
+                fv[fold_no-1].write(img_name+' '+str(self.labels[seg])+' '+str(gaze[0])+' '+str(gaze[1])+'\n')
+
+                # this user's data goes to all other training folds
+                for i in range(10):
+                    if i==fold_no-1:
+                        continue
+                    ft[i].write(img_name+' '+str(self.labels[seg])+' '+str(gaze[0])+' '+str(gaze[1])+'\n')
+
+            count += 1
+            success, img = vidcap.read()
+
+    
+        if self.visualize:
+            cv2.destroyAllWindows()
+            video.release()
+
+        f.close()
+        f2.close()
+        f3.close()
+        f4.close()
+        f5.close()
+
+
+
+
+    def gaze_for_kt_imgs_short(self, seg, user, trial):
+        user_dir = self.data_dir + 'videos/' + user + '/' + seg + '/segments/' + str(trial) + '/'
+        if not os.path.exists(user_dir):
+            return
+        bag_dir = '/home/akanksha/Documents/gaze_for_lfd_study_data/gaze_lfd_user_study/' 
+
+        self.read_json(user_dir)
+        vidcap = cv2.VideoCapture(user_dir+'fullstream.mp4')
+        fps = vidcap.get(cv2.CAP_PROP_FPS)
+        frame_count = int(vidcap.get(cv2.CAP_PROP_FRAME_COUNT))
+        end_time = frame_count/fps
+        # print fps     #25 fps
+        success, img = vidcap.read()
+
+        if self.visualize:
+            fourcc = cv2.VideoWriter_fourcc(*'XVID')
+            video = cv2.VideoWriter(user_dir+'gaze_kt_overlayed.avi',fourcc,fps,(1920,1080))
+
+        # open files for image names and labels
+        if not os.path.exists(self.data_dir +"KT_50"):
+            os.mkdir(self.data_dir +"KT_50")
+        if not os.path.exists(self.data_dir +"KT_50/images"):
+            os.mkdir(self.data_dir +"KT_50/images")
+
+        f = open(self.data_dir +"KT_50/images.txt",'a')
+        f2 = open(self.data_dir +"KT_50/image_class_labels.txt","a")
+        f3 = open(self.data_dir +"KT_50/image_gaze.txt","a")
+        ft, fv = [], []
+        for i in range(10):
+            f4 = open(self.data_dir +"KT_50/train"+str(i)+".list","a")
+            f5 = open(self.data_dir +"KT_50/val"+str(i)+".list","a")
+
+            ft.append(f4)
+            fv.append(f5)
+
+
+        bagloc = bag_dir + user + '/bags/'
+        bagfiles = os.listdir(bagloc)
+
+        bag_file = ''
+        
+        for file in bagfiles:
+            # if (file.endswith("kt-p1.bag")):
+            #     bag_file = bagloc + file
+            if (file.endswith("kt-p1.bag") and (int(trial)==1 or int(trial)==4)):
+                bag_file = bagloc + file
+            elif (file.endswith("kt-p2.bag") and (int(trial)==2 or int(trial)==5)):
+                bag_file = bagloc + file
+            elif (file.endswith("kt-p3.bag") and (int(trial)==3 or int(trial)==6)):
+                bag_file = bagloc + file
+        
+        if bag_file == '':
+            print('Bag file does not exist for KT demo, skipping...')
+            return
+        
+        # read bag file
+        video_file = user_dir+'fullstream.mp4'
+        keyframes, keyframe_indices = self.get_kt_keyframes_labels(video_file, bag_file)
+
+        first_grasp = False
+        pouring_round = 0
+        for fid in keyframe_indices:
+            kf_type = keyframes[fid]
+            if(kf_type=='Open'):
+                first_grasp = True
+            if kf_type=='Reaching' and first_grasp:
+                pouring_round = 1
+            end_idx = fid
+           
+            if kf_type=='Open':
+                kf_type = 'Release'
+            if kf_type=='Close':
+                kf_type = 'Grasping'
+            
+
+        all_ts = sorted(self.gp.keys())
+        count = 0
+        imgs = []       # list of image frames
+        frame2ts = []   # corresponding list of video time stamp values in microseconds
+        pouring_round = 0
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        first_grasp = False
+        kf_type = 'Reaching'
+        grasp_time = 0
+ 
+        # subample to 52 frames per video
+        skip = abs(frame_count/52)
+        while success:  
+            # print(count)
+            # if count>=start and count<=end:
+            frame_ts = int((count/fps)*1000000)
+            frame2ts.append(frame_ts)
+
+            less = [a for a in self.all_vts if a<=frame_ts]
+            idx = len(less)-1
+
+            if idx<len(self.model):
+                m,c = self.model[idx]
+            else:
+                m,c = self.model[len(self.model)-1]
+            ts = m*frame_ts + c
+
+            tracker_ts, _ = self.takeClosest(all_ts,ts)
+
+            gaze = self.gp[tracker_ts]
+            gaze_coords = (int(gaze[0]*1920), int(gaze[1]*1080))
+
+            if self.visualize:
+                img_hsv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+                hsv = img_hsv[gaze_coords[1]][gaze_coords[0]]
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                color_name, color_value = get_color_name(hsv)
+                
+                if(color_name!=''):
+                #   print(color_name)
+                    cv2.putText(img, color_name, (1430, 250), font, 1.8, color_value, 5, cv2.LINE_AA)
+
+                # print(hsv)
+                cv2.putText(img, str(hsv), (230, 250), font, 1.8, (255, 255, 0), 5, cv2.LINE_AA)
+
+                cv2.circle(img,gaze_coords, 25, (255,255,0), 3)
+                video.write(img)
+
+
+            # assign action label for this frame
+            if count in keyframe_indices:
+                print('keyframe here!')
+                idx = keyframe_indices.index(count)
+    
+                current_recorded_kf = keyframes[keyframe_indices[idx]]
+                if idx!=len(keyframe_indices)-1:
+                    next_recorded_kf = keyframes[keyframe_indices[idx+1]]
+
+                kf_type = current_recorded_kf  
+
+            if(kf_type=='Pouring'):
+                first_grasp = True
+            if kf_type=='Reaching' and first_grasp:
+                pouring_round = 1
+                grasp_time = 0
+
+            if kf_type=='Open':
+                kf_type = 'Release' 
+            if kf_type=='Close':
+                kf_type = 'Grasping'
+                grasp_time += 1
+
+            if kf_type=='Grasping' and grasp_time >=1:
+                grasp_time+=1
+
+
+            if grasp_time>=120 and current_recorded_kf=='Close':
+                # kf_type = next_recorded_kf
+                kf_type = 'Transport'
+
+            if(count%skip==0):
+                # 'Other' keyframe is ignored
+                if kf_type=='Other':   
+                    count+=1
+                    success, img = vidcap.read()
+                    continue
+
+                # write images
+                self.img_count+=1
+                img_name = user+'_'+str(trial)+'_'+str(count)+'.jpg'
+                cv2.imwrite(self.data_dir+'/KT_50/images/'+img_name, img)
                 f.write(str(self.img_count)+' '+img_name+'\n')
                 # seg = self.find_segment(user, count, fps, end_time)
                 seg = kf_type
@@ -676,6 +899,6 @@ class LfdData():
 
 
 if __name__ == "__main__":
-    data = LfdData('pouring')
+    data = LfdData('pouring', 'k', short_video=True)
     # data.create_video_imgs()
     data.create_kt_imgs()
