@@ -77,7 +77,7 @@ def main():
         num_classes = 1000
         base_size = 256
         pool_size = 7
-    elif dataset == 'ut-lfd':
+    elif dataset == 'ut-lfd-v' or dataset=='ut-lfd-kt':
         num_classes = 6
         base_size = 512
         pool_size = 14
@@ -119,9 +119,14 @@ def main():
         imgs_fold = os.path.join(data_root)
         train_ann_file = os.path.join(data_root, 'imagenet_train.list')
         valid_ann_file = os.path.join(data_root, 'imagenet_val.list')
-    elif dataset == 'ut-lfd':
+    elif dataset == 'ut-lfd-v':
         data_root = 'data/ut-lfd/pouring'
         imgs_fold = os.path.join(data_root, 'VD_images')
+        train_ann_file = os.path.join(data_root, args.train)
+        valid_ann_file = os.path.join(data_root, args.val)
+    elif dataset == 'ut-lfd-kt':
+        data_root = 'data/ut-lfd/pouring'
+        imgs_fold = os.path.join(data_root, 'KD_images')
         train_ann_file = os.path.join(data_root, args.train)
         valid_ann_file = os.path.join(data_root, args.val)
     else:
@@ -411,7 +416,7 @@ def save_features(val_loader, model, criterion, use_gaze):
 
         # print(' * Prec@1 {top1.avg:.3f} Prec@5 {top5.avg:.3f}'
         #       .format(top1=top1, top5=top5))
-    print(len(feat_dict.keys()), len(feat_dict[feat_dict.keys()[1]].keys()))
+    print(len(feat_dict.keys()), len(feat_dict[list(feat_dict.keys())[1]].keys()))
     # simple_feat_dict = {}
     # for v in feat_dict:
     #     l = len(feat_dict[v].keys())

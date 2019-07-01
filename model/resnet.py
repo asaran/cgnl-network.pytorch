@@ -478,9 +478,9 @@ class ResNet(nn.Module):
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
-        print('shape layer3: ', x.size()) # [16, 2048, 28, 28]
+        #print('shape layer3: ', x.size()) # [16, 2048, 28, 28]
         x = self.layer4(x)
-        print('shape layer4: ', x.size()) # [16, 2048, 14, 14]
+        #print('shape layer4: ', x.size()) # [16, 2048, 14, 14]
         
 
         x = self.avgpool(x)
