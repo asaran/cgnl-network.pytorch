@@ -41,6 +41,8 @@ parser.add_argument('--valid', '-v', dest='valid',
         action='store_true', help='just run validation')
 parser.add_argument('--save_feats', '-s', dest='save_feats',
         action='store_true', help='just save features for validation images with a forward pass')
+parser.add_argument('--out_file', default='features.pkl', type=str,
+        help='file name where features are stored')
 parser.add_argument('--checkpoints', default='', type=str,
         help='the dir of checkpoints')
 parser.add_argument('--dataset', default='cub', type=str,
@@ -53,6 +55,8 @@ parser.add_argument('--train', default='train.list', type=str,
         help='list of training images, labels and gaze coordinates')
 parser.add_argument('--val', default='val.list', type=str,
         help='list of validation images, labels and gaze coordinates')
+parser.add_argument('--load_pretrained', '-lp', dest='load_pretrained',
+        action='store_true', help='load pretrained weights')
 
 best_prec1 = 0
 best_prec5 = 0
@@ -77,10 +81,14 @@ def main():
         num_classes = 1000
         base_size = 256
         pool_size = 7
-    elif dataset == 'ut-lfd-v' or dataset=='ut-lfd-kt':
+    elif dataset == 'ut-lfd-v' or dataset=='ut-lfd-kt' or dataset=='ut-lfd-kt50':
+        #num_classes = 1000 
         num_classes = 6
         base_size = 512
         pool_size = 14
+    if dataset=='ut-lfd-kt50':
+        num_classes = 1000 # when saving imagenet features
+        
     # num_classes = 200 if dataset == 'cub' else 1000
     # base_size = 512 if dataset == 'cub' else 256
     # pool_size = 14 if base_size == 512 else 7
@@ -127,6 +135,11 @@ def main():
     elif dataset == 'ut-lfd-kt':
         data_root = 'data/ut-lfd/pouring'
         imgs_fold = os.path.join(data_root, 'KD_images')
+        train_ann_file = os.path.join(data_root, args.train)
+        valid_ann_file = os.path.join(data_root, args.val)
+    elif dataset == 'ut-lfd-kt50':
+        data_root = 'data/ut-lfd/pouring/KT_50'
+        imgs_fold = os.path.join(data_root, 'images')
         train_ann_file = os.path.join(data_root, args.train)
         valid_ann_file = os.path.join(data_root, args.val)
     else:
@@ -178,6 +191,88 @@ def main():
                              nl_nums=nl_nums,
                              pool_size=pool_size)
 
+
+    if args.load_pretrained:
+        num_classes = 1000
+        model._modules['fc'] = torch.nn.Linear(in_features=2048,
+                                           out_features=num_classes) 
+        torch.nn.init.kaiming_normal_(model._modules['fc'].weight,
+                                  mode='fan_out', nonlinearity='relu')  
+        model = torch.nn.DataParallel(model, device_ids=gpu_ids).cuda()     
+
+    
+
+
+    # change the fc layer
+    # if use_gaze:
+    #     model._modules['fc'] = torch.nn.Linear(in_features=2048+2,
+    #                                        out_features=num_classes)
+    # else:
+    #     model._modules['fc'] = torch.nn.Linear(in_features=2048,
+    #                                        out_features=num_classes)
+
+    # torch.nn.init.kaiming_normal_(model._modules['fc'].weight,
+    #                               mode='fan_out', nonlinearity='relu')
+    # print(model)
+
+    # # parallel
+    # model = torch.nn.DataParallel(model, device_ids=gpu_ids).cuda()
+
+    # define loss function (criterion) and optimizer
+    # criterion = nn.CrossEntropyLoss().cuda()
+
+    # optimizer
+    # optimizer = torch.optim.SGD(
+    #         model.parameters(),
+    #         args.lr,
+    #         momentum=0.9,
+    #         weight_decay=1e-4)
+
+    # cudnn
+    # cudnn.benchmark = True
+
+    # warmup
+    if args.warmup:
+        epochs += WARMUP_EPOCHS
+        lr_drop_epoch_list = list(
+                np.array(lr_drop_epoch_list) + WARMUP_EPOCHS)
+        cprint('=> WARN: warmup is used in the first {} epochs'.format(
+            WARMUP_EPOCHS), 'yellow')
+
+
+    # load pretrained imagenet weights
+    if args.load_pretrained:
+        # num_classes = 1000        
+        imagenet_checkpoint = 'pretrained/1832261502/model_best.pth.tar' 
+        model.load_state_dict(
+                torch.load(imagenet_checkpoint)['state_dict'])
+
+        pretrained_dict = torch.load(imagenet_checkpoint)['state_dict']
+        model_dict = model.state_dict()
+
+        # 1. filter out unnecessary keys
+        pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
+        unset_keys = [k for k, v in pretrained_dict.items() if k not in model_dict]
+        print(unset_keys)
+        # 2. overwrite entries in the existing state dict
+        model_dict.update(pretrained_dict) 
+        # 3. load the new state dict
+        model.load_state_dict(pretrained_dict)
+
+        for param in model.parameters():
+            param.requires_grad = False
+        for name, param in model.named_parameters():
+            # if param.requires_grad:
+            print (name)
+            if name=='module.fc.weight':
+                param.requires_grad = True
+            if name=='module.fc.bias':
+                param.requires_grad = True
+        num_classes = 6
+        
+        # model._modules['fc'].requires_grad = True
+
+
     # change the fc layer
     if use_gaze:
         model._modules['fc'] = torch.nn.Linear(in_features=2048+2,
@@ -185,6 +280,7 @@ def main():
     else:
         model._modules['fc'] = torch.nn.Linear(in_features=2048,
                                            out_features=num_classes)
+
     torch.nn.init.kaiming_normal_(model._modules['fc'].weight,
                                   mode='fan_out', nonlinearity='relu')
     print(model)
@@ -205,13 +301,10 @@ def main():
     # cudnn
     cudnn.benchmark = True
 
-    # warmup
-    if args.warmup:
-        epochs += WARMUP_EPOCHS
-        lr_drop_epoch_list = list(
-                np.array(lr_drop_epoch_list) + WARMUP_EPOCHS)
-        cprint('=> WARN: warmup is used in the first {} epochs'.format(
-            WARMUP_EPOCHS), 'yellow')
+    for name, param in model.named_parameters():
+        print('Trainable parameters:')
+        if param.requires_grad:
+            print (name)
 
     # save features
     if args.save_feats:
@@ -222,7 +315,7 @@ def main():
         print('=> loading state_dict from {}'.format(checkpoint_best))
         model.load_state_dict(
                 torch.load(checkpoint_best)['state_dict'])
-        save_features(val_loader, model, criterion, use_gaze)
+        save_features(val_loader, model, criterion, use_gaze, args.out_file)
         # print(' * Final Accuracy: Prec@1 {:.3f}, Prec@5 {:.3f}'.format(prec1, prec5))
         exit(0)
 
@@ -360,7 +453,7 @@ def validate(val_loader, model, criterion, use_gaze):
     return top1.avg, top5.avg
 
 
-def save_features(val_loader, model, criterion, use_gaze):
+def save_features(val_loader, model, criterion, use_gaze, feat_outfile):
     batch_time = AverageMeter()
     # losses = AverageMeter()
     # top1 = AverageMeter()
@@ -395,8 +488,8 @@ def save_features(val_loader, model, criterion, use_gaze):
                       #'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
                       #'Prec@1 {top1.val:.3f} ({top1.avg:.3f})\t'
                       #'Prec@5 {top5.val:.3f} ({top5.avg:.3f})'
-		      .format(i, len(val_loader), batch_time=batch_time))
-		       #, loss=losses,
+              .format(i, len(val_loader), batch_time=batch_time))
+               #, loss=losses,
                        #top1=top1, top5=top5))
 
             # TODO: order the images of every video. Index the feat_dict with video_id --> list of ordered
@@ -422,7 +515,7 @@ def save_features(val_loader, model, criterion, use_gaze):
     #     l = len(feat_dict[v].keys())
     #     for idx in feat_dict[v]:
 
-    with open('features.pkl', 'wb') as handle:
+    with open(feat_outfile, 'wb') as handle:
         pkl.dump(feat_dict, handle)
 
 
