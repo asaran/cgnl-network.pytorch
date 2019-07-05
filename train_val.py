@@ -95,13 +95,13 @@ def main():
     #workers = 0 if debug else 8
     workers = 0 if debug else 4
     #batch_size = 2 if debug else 256
-    batch_size = 2 if debug else 64 # 64 for 4 GPUs on titan cluster
+    batch_size = 4 if debug else 64 # 64 for 4 GPUs on titan cluster
     if base_size == 512 and \
         args.arch == '152':
         batch_size = 128
     drop_ratio = 0.1
     lr_drop_epoch_list = [31, 61, 81]
-    epochs = 100
+    epochs = 100 #100
     eval_freq = 1
     gpu_ids = [0] if debug else [0,1,2,3]
     #gpu_ids = [0]
@@ -245,7 +245,7 @@ def main():
         # num_classes = 1000        
         imagenet_checkpoint = 'pretrained/1832261502/model_best.pth.tar' 
         model.load_state_dict(
-                torch.load(imagenet_checkpoint)['state_dict'])
+            torch.load(imagenet_checkpoint)['state_dict'])
 
         pretrained_dict = torch.load(imagenet_checkpoint)['state_dict']
         model_dict = model.state_dict()
@@ -341,9 +341,9 @@ def main():
         train(train_loader, model, criterion, optimizer, epoch, epochs, current_lr, use_gaze)
 
         if nl_nums > 0:
-            checkpoint_name = '{}-r-{}-w-{}{}-block.pth.tar'.format(dataset, arch, nl_nums, nl_type)
+            checkpoint_name = '{}-{}-r-{}-w-{}{}-block.pth.tar'.format(dataset, args.train, arch, nl_nums, nl_type)
         else:
-            checkpoint_name = '{}-r-{}-base.pth.tar'.format(dataset, arch)
+            checkpoint_name = '{}-r-{}-{}-base.pth.tar'.format(dataset, args.train, arch)
 
         if (epoch + 1) % eval_freq == 0:
             prec1, prec5 = validate(val_loader, model, criterion, use_gaze)
@@ -416,17 +416,25 @@ def validate(val_loader, model, criterion, use_gaze):
     top1 = AverageMeter()
     top5 = AverageMeter()
 
+    # write outputs to file
+    f = open('out_gaze.txt','w')
+
     # switch to evaluate mode
     model.eval()
 
     with torch.no_grad():
         end = time.time()
-        for i, (input, target, gaze_coords,_) in enumerate(val_loader):
+        for i, (input, target, gaze_coords,img_paths) in enumerate(val_loader):
             target = target.cuda(non_blocking=True)
 
             # compute output
             output = model(input, gaze_coords, use_gaze)
             loss = criterion(output, target)
+
+            
+            for img_path, out, label in zip(img_paths,output,target):
+                _, predicted_label = torch.max(out, 0)
+                f.write(img_path+'\t'+str(predicted_label.data.cpu().numpy())+'\t'+str(label.data.cpu().numpy())+'\n') 
 
             # measure accuracy and record loss
             prec1, prec5 = accuracy(output, target, topk=(1, 5))
@@ -450,6 +458,7 @@ def validate(val_loader, model, criterion, use_gaze):
         print(' * Prec@1 {top1.avg:.3f} Prec@5 {top5.avg:.3f}'
               .format(top1=top1, top5=top5))
 
+    f.close()
     return top1.avg, top5.avg
 
 
@@ -517,7 +526,6 @@ def save_features(val_loader, model, criterion, use_gaze, feat_outfile):
 
     with open(feat_outfile, 'wb') as handle:
         pkl.dump(feat_dict, handle)
-
 
 
 
