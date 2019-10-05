@@ -1,6 +1,12 @@
 from numpy import ones,vstack
 from numpy.linalg import lstsq
+import sys
+ros_path = '/opt/ros/kinetic/lib/python2.7/dist-packages'
+if ros_path in sys.path:
+    sys.path.remove(ros_path)
 import cv2
+sys.path.append('/opt/ros/kinetic/lib/python2.7/dist-packages')
+
 import ast 
 from bisect import bisect_left
 import os
@@ -258,7 +264,7 @@ class LfdData():
         f4.close()
         f5.close()
     
-    def read_video_annotation_file(self, demo_type):
+    def read_video_annotation_file(self):
         file_path = self.data_dir+'video_kf.txt'
         file = open(file_path, 'r') 
 
@@ -266,7 +272,7 @@ class LfdData():
             entries = line.strip('\n').split(' ')
             user = entries[0]
             self.users.append(user)
-            self.vid_start[user] = float(entries[1])
+            self.vid_start[user] = float(entries[2])
             if entries[-1]=='end':
                 self.vid_end[user] = entries[-1]  
             else:
@@ -305,6 +311,7 @@ class LfdData():
             # print('t: ',str(t))
             if count>=t*fps and count<=t_next*fps:
                 return self.segs[user][s]
+        s = self.seg_times[user][i+1]
         return self.segs[user][s]
 
     def create_video_imgs(self):
@@ -331,15 +338,17 @@ class LfdData():
     def create_kt_imgs(self):
 
         self.users = self.order.keys()
-        # self.users = ['KT1', 'KT2']
+        # self.users = ['KT2', 'KT9', 'KT10', 'KT11', 'KT12', 'KT13','KT15']
         for user in self.users:
             print(user)
             exps = self.order[user]
             demo_type = 'k'
             if demo_type == exps[0]:
                 trials = [1, 2, 3]
+                # trials = [1]
             else:
                 trials = [4, 5, 6]
+                # trials = [5]
 
             user_dir = self.data_dir + 'videos/' + user + '/'
             d = os.listdir(user_dir)
@@ -635,6 +644,18 @@ class LfdData():
  
         # subample to 52 frames per video
         skip = abs(frame_count/52)
+        if user=='KT6' and trial==2:
+            skip = abs(frame_count/55)
+        if user=='KT5' and trial==3:
+            skip = abs(frame_count/55)
+        if user=='KT1' and trial==2:
+            skip = abs(frame_count/60)
+        if user=='KT16' and trial==5:
+            skip = abs(frame_count/55)
+        if user=='KT14' and trial==1:
+            skip = abs(frame_count/57)
+
+        saved = 0
         while success:  
             # print(count)
             # if count>=start and count<=end:
@@ -703,12 +724,16 @@ class LfdData():
                 # kf_type = next_recorded_kf
                 kf_type = 'Transport'
 
+
             if(count%skip==0):
+            # if count in subsample:
                 # 'Other' keyframe is ignored
                 if kf_type=='Other':   
                     count+=1
                     success, img = vidcap.read()
                     continue
+
+                saved+=1
 
                 # write images
                 self.img_count+=1
@@ -722,6 +747,8 @@ class LfdData():
                 f3.write(str(self.img_count)+' '+str(gaze[0])+' '+str(gaze[1])+'\n')
                 
                 fold_no = int(math.ceil(float(user[2:])/2))
+                # print('frame_count: ',str(frame_count))
+                # print(img_name)
                 print('user: '+user+'\tfold_no: '+str(fold_no)+'\tcount: '+str(count))
                 fv[fold_no-1].write(img_name+' '+str(self.labels[seg])+' '+str(gaze[0])+' '+str(gaze[1])+'\n')
 
@@ -744,6 +771,11 @@ class LfdData():
         f3.close()
         f4.close()
         f5.close()
+
+        if saved<51:
+            print('less images than 51!!')
+            print(user,trial)
+            exit()
 
 
     def get_color_name(self,hsv):
@@ -899,6 +931,6 @@ class LfdData():
 
 
 if __name__ == "__main__":
-    data = LfdData('pouring', 'k', short_video=True)
-    # data.create_video_imgs()
-    data.create_kt_imgs()
+    data = LfdData('pouring', 'v', short_video=False)
+    data.create_video_imgs()
+    # data.create_kt_imgs()
