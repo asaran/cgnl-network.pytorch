@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 
 def display_frames(axes, frames):
   for i,ax in enumerate(axes):
+    print(len(frames), len(axes))
     ax.imshow(frames[i*(len(frames)//len(axes))])
     ax.axis('off')
     ax.set_xticklabels([])
@@ -16,18 +17,18 @@ def display_strip(ax, labels, name, val):
   ax.pcolor(np.expand_dims(val,axis=0), cmap='tab20',vmin=0,vmax=len(labels))
   # ax.pcolor([[1,2]], cmap='tab20',vmin=0,vmax=len(labels))
   # ax.set_ylabel(name)
-  ax.set_ylabel(name,rotation=90, fontsize=16, ha='center')
+  ax.set_ylabel(name,rotation=90, fontsize=16) #rotation=90, , ha='center'
   # ax.set_aspect('equal')
   # ax.tick_params(width=0.5)
   ax.set_yticks([], [])
   ax.set_xticks([], [])
        
 
-def plot(labels, demo_frames, sample_gt, classify_gaze, classify_nogaze, num_frames=20):
+def plot(labels, demo_frames, sample_gt, classify_gaze, classify_nogaze, num_frames=15):
   import matplotlib.gridspec as gridspec
 
-  fig = plt.figure(figsize=(num_frames,7),dpi=300) #6
-  gs = gridspec.GridSpec(7, num_frames) #8
+  fig = plt.figure(figsize=(num_frames,4),dpi=300) #6
+  gs = gridspec.GridSpec(4, num_frames, height_ratios=[10,1,1,1]) #8
  
   # Display Demo
   # for i in range(0,len(demo_frames),len(demo_frames)/num_frames):
@@ -37,7 +38,7 @@ def plot(labels, demo_frames, sample_gt, classify_gaze, classify_nogaze, num_fra
   display_strip(plt.subplot(gs[2,:]), labels, 'NL', classify_nogaze)
   display_strip(plt.subplot(gs[3,:]), labels, 'NL+\ngaze', classify_gaze)
 
-  plt.subplots_adjust(wspace=0, hspace=0.2)
+  plt.subplots_adjust(wspace=0, hspace=0.3)
   plt.savefig('seg_vis.png')
   # plt.show(block=False)
   # plt.close()
@@ -74,7 +75,7 @@ for d in no_gaze_data:
 demo = []
 import math
 for i in range(len(demo_frames)):
-  skip = math.floor(len(demo_frames)/20)
+  skip = math.floor(len(demo_frames)/15)
   if i%skip==0:
     demo.append(demo_frames[i])
 # print(len(demo_frames))
