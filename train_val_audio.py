@@ -101,8 +101,7 @@ def main():
     workers = 0 if debug else 4
     #batch_size = 2 if debug else 256
     batch_size = 4 if debug else 64 # 64 for 4 GPUs on titan cluster
-    if base_size == 512 and \
-        args.arch == '152':
+    if base_size == 512 and args.arch == '152':
         batch_size = 128
     drop_ratio = 0.1
     lr_drop_epoch_list = [31, 61, 81]
@@ -134,7 +133,7 @@ def main():
         valid_ann_file = os.path.join(data_root, 'imagenet_val.list')
     elif dataset == 'box-lfd-v':
         data_root = '/media/akanksha/Seagate Portable Drive/audio_study/segmentation_data/box/'
-        imgs_fold = os.path.join(data_root, 'VD_images')
+        imgs_fold = os.path.join(data_root, 'VD_images_human')
         train_ann_file = os.path.join(data_root, args.train)
         valid_ann_file = os.path.join(data_root, args.val)
     elif dataset == 'box-lfd-kt':
@@ -144,7 +143,7 @@ def main():
         valid_ann_file = os.path.join(data_root, args.val)
     elif dataset == 'cutting-lfd-v':
         data_root = '/media/akanksha/Seagate Portable Drive/audio_study/segmentation_data/cutting/'
-        imgs_fold = os.path.join(data_root, 'VD_images')
+        imgs_fold = os.path.join(data_root, 'VD_images_human')
         train_ann_file = os.path.join(data_root, args.train)
         valid_ann_file = os.path.join(data_root, args.val)
     elif dataset == 'cutting-lfd-kt':
@@ -258,7 +257,8 @@ def main():
     # load pretrained imagenet weights
     if args.load_pretrained:
         # num_classes = 1000        
-        imagenet_checkpoint = 'pretrained/1832261502/model_best.pth.tar' 
+        # imagenet_checkpoint = 'pretrained/1832261502/model_best.pth.tar' 
+        imagenet_checkpoint = 'pretrained/1832261502/imagenet-r-50-w-1cgnl-block.pth.tar'
         model.load_state_dict(
             torch.load(imagenet_checkpoint)['state_dict'])
 
@@ -343,7 +343,7 @@ def main():
         print('=> loading state_dict from {}'.format(checkpoint_best))
         model.load_state_dict(
                 torch.load(checkpoint_best)['state_dict'])
-        prec1, prec5 = validate(val_loader, model, criterion)
+        prec1, prec5 = validate(val_loader, model, criterion, use_audio)
         print(' * Final Accuracy: Prec@1 {:.3f}, Prec@5 {:.3f}'.format(prec1, prec5))
         exit(0)
 
@@ -386,7 +386,7 @@ def train(train_loader, model, criterion, optimizer, epoch, epochs, current_lr, 
 
     end = time.time()
     for i, (input, target, audio_feats,_) in enumerate(train_loader):
-        print('audio_feats: ', len(audio_feats))
+        # print('audio_feats: ', len(audio_feats))
         # measure data loading time
         data_time.update(time.time() - end)
 
@@ -426,7 +426,7 @@ def train(train_loader, model, criterion, optimizer, epoch, epochs, current_lr, 
                    data_time=data_time, loss=losses, top1=top1, top5=top5))
 
 
-def validate(val_loader, model, criterion, use_audio):
+def validate(val_loader, model, criterion, use_audio=False):
     batch_time = AverageMeter()
     losses = AverageMeter()
     top1 = AverageMeter()

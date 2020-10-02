@@ -471,41 +471,41 @@ class ResNet(nn.Module):
 
     def forward(self, x, gaze_coords, use_gaze, get_feats=False):
         x = self.conv1(x)
-        print('shape conv: ', x.size()) # []
+        # print('shape conv: ', x.size()) # []
         x = self.bn1(x)
-        print('shape batch norm: ', x.size()) # []
+        # print('shape batch norm: ', x.size()) # []
         x = self.relu(x)
-        print('shape relu: ', x.size())
+        # print('shape relu: ', x.size())
         x = self.maxpool(x)
-        print('shape max pool: ', x.size())
+        # print('shape max pool: ', x.size())
 
         x = self.layer1(x)
-        print('shape layer1: ', x.size()) # []
+        # print('shape layer1: ', x.size()) # []
         x = self.layer2(x)
-        print('shape layer2: ', x.size()) # []
+        # print('shape layer2: ', x.size()) # []
         x = self.layer3(x)
-        print('shape layer3: ', x.size()) # [16, 2048, 28, 28] # non-local/CGNL block
+        # print('shape layer3: ', x.size()) # [16, 2048, 28, 28] # non-local/CGNL block
         x = self.layer4(x)
-        print('shape layer4: ', x.size()) # [16, 2048, 14, 14]
+        # print('shape layer4: ', x.size()) # [16, 2048, 14, 14]
         
 
         x = self.avgpool(x)
-        print('shape avg pool: ', x.size())  # [16, 2048, 1, 1]
+        # print('shape avg pool: ', x.size())  # [16, 2048, 1, 1]
         if get_feats:
             return x
         x = x.view(x.size(0), -1)
         x = self.dropout(x)
-        print('shape dropout: ', x.size()) # []
+        # print('shape dropout: ', x.size()) # []
 
         # print('shape gaze: ', gaze_coords.size()) #torch.Size([batch_size, 2050])
         if use_gaze:
             x = torch.cat((x, gaze_coords), 1)
-            print('concat shape: ', x.size())
+            # print('concat shape: ', x.size())
             x = self.fc(x)
         else:
             x = self.fc(x)
 
-        print('shape final: ', x.size()) # []
+        # print('shape final: ', x.size()) # []
         return x
 
 
