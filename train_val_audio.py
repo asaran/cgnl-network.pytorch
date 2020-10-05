@@ -105,7 +105,7 @@ def main():
         batch_size = 128
     drop_ratio = 0.1
     lr_drop_epoch_list = [31, 61, 81]
-    epochs = 1 #100
+    epochs = 10#100
     eval_freq = 1
     gpu_ids = [0] if debug else [0,1,2,3]
     #gpu_ids = [0]
@@ -118,7 +118,7 @@ def main():
 
     # warmup setting
     WARMUP_LRS = [args.lr * (drop_ratio**len(lr_drop_epoch_list)), args.lr]
-    WARMUP_EPOCHS = 1#10
+    WARMUP_EPOCHS = 10
 
     # data loader
     if dataset == 'cub':
@@ -133,7 +133,7 @@ def main():
         valid_ann_file = os.path.join(data_root, 'imagenet_val.list')
     elif dataset == 'box-lfd-v':
         data_root = '/media/akanksha/Seagate Portable Drive/audio_study/segmentation_data/box/'
-        imgs_fold = os.path.join(data_root, 'VD_images_human')
+        imgs_fold = os.path.join(data_root, 'VD_images')
         train_ann_file = os.path.join(data_root, args.train)
         valid_ann_file = os.path.join(data_root, args.val)
     elif dataset == 'box-lfd-kt':
@@ -143,7 +143,7 @@ def main():
         valid_ann_file = os.path.join(data_root, args.val)
     elif dataset == 'cutting-lfd-v':
         data_root = '/media/akanksha/Seagate Portable Drive/audio_study/segmentation_data/cutting/'
-        imgs_fold = os.path.join(data_root, 'VD_images_human')
+        imgs_fold = os.path.join(data_root, 'VD_images')
         train_ann_file = os.path.join(data_root, args.train)
         valid_ann_file = os.path.join(data_root, args.val)
     elif dataset == 'cutting-lfd-kt':
