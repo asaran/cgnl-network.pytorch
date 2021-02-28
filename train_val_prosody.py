@@ -43,17 +43,17 @@ parser.add_argument('--save_feats', '-s', dest='save_feats',
         action='store_true', help='just save features for validation images with a forward pass')
 parser.add_argument('--out_file', default='features.pkl', type=str,
         help='file name where features are stored')
-parser.add_argument('--checkpoints', default='', type=str,
-        help='the dir of checkpoints')
+parser.add_argument('--checkpoints', default='/media/akanksha/Seagate Portable Drive/audio_study/segmentation_data/prosody_cgnl_models/', \
+        type=str,help='the dir of checkpoints')
 parser.add_argument('--dataset', default='cub', type=str,
         help='cub | imagenet (default: cub)')
 parser.add_argument('--lr', '--learning-rate', default=0.01, type=float, metavar='LR',
         help='initial learning rate (default: 0.01)')
 parser.add_argument('--audio', '-a', dest='audio', action='store_true', 
         help='use vggish audio feats')
-parser.add_argument('--train', default='train_cutting_video.list', type=str,
+parser.add_argument('--train', default='train_cutting_video_prosody.list', type=str,
         help='list of training images, labels and audio feats')
-parser.add_argument('--val', default='val_cutting_video.list', type=str,
+parser.add_argument('--val', default='val_cutting_video_prosody.list', type=str,
         help='list of validation images, labels and audio feats')
 parser.add_argument('--load_pretrained', '-lp', dest='load_pretrained',
         action='store_true', help='load pretrained weights')
@@ -83,12 +83,12 @@ def main():
         pool_size = 7
     elif dataset == 'box-lfd-v' or dataset=='box-lfd-kt':
         #num_classes = 1000 
-        num_classes = 4 #TODO: 5 extra noise/none category
+        num_classes = 5 #TODO: 5 extra noise/none category
         base_size = 512
         pool_size = 14
     elif dataset == 'cutting-lfd-v' or dataset=='cutting-lfd-kt':
         #num_classes = 1000 
-        num_classes = 5 #TODO: 6 extra noise/none category
+        num_classes = 6 #TODO: 6 extra noise/none category
         base_size = 512
         pool_size = 14
     if dataset=='ut-lfd-kt50':
@@ -104,7 +104,8 @@ def main():
     if base_size == 512 and args.arch == '152':
         batch_size = 128
     drop_ratio = 0.1
-    lr_drop_epoch_list = [31, 61, 81]
+    # lr_drop_epoch_list = [31, 61, 81]
+    lr_drop_epoch_list = [1,5,7]
     epochs = 10#100
     eval_freq = 1
     gpu_ids = [0] if debug else [0,1,2,3]
@@ -118,7 +119,7 @@ def main():
 
     # warmup setting
     WARMUP_LRS = [args.lr * (drop_ratio**len(lr_drop_epoch_list)), args.lr]
-    WARMUP_EPOCHS = 10
+    WARMUP_EPOCHS = 1
 
     # data loader
     if dataset == 'cub':
@@ -290,7 +291,7 @@ def main():
 
     # change the fc layer
     if use_audio:
-        model._modules['fc'] = torch.nn.Linear(in_features=2048+128,
+        model._modules['fc'] = torch.nn.Linear(in_features=2048+14,
                                            out_features=num_classes)
     else:
         model._modules['fc'] = torch.nn.Linear(in_features=2048,

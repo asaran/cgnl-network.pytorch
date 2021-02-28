@@ -6,4 +6,5 @@ trained_models/*
 lib/__pycache__/*
 model/__pycache__/*
 *.pkl
-
+out_audio.txt
+*.txt

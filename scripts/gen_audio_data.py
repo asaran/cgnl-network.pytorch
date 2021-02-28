@@ -13,6 +13,7 @@ class LfdData():
             img_dir = 'KD_images'
         self.dest_dir = '/media/akanksha/Seagate Portable Drive/audio_study/segmentation_data/'+ exp + '/' + img_dir#'../data/box/'
         self.skip = skip
+        # TODO: only users who use audio
         self.users = ['user2', 'user4', 'user7', 'user8', 'user10','user14','user16','user18','user20'] 
         self.img_topic = '/camera/right/qhd/image_color_rect/compressed'
         self.data_dir = '/media/akanksha/Seagate Portable Drive/audio_study/kinesthetic/'
